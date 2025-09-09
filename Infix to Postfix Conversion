@@ -1,0 +1,101 @@
+#include <iostream>
+#include <stack>
+#include <string>
+#include <map>
+#include <cctype>
+#include <cmath>
+using namespace std;
+
+int precedence(char op) {
+    if (op == '^') return 3;
+    if (op == '*' || op == '/' || op == '%') return 2;
+    if (op == '+' || op == '-') return 1;
+    return 0;
+}
+
+string infixToPostfix(string infix) {
+    stack<char> st;
+    string postfix = "";
+
+    for (char ch : infix) {
+        if (isspace(ch)) continue; // ignore spaces
+
+        if (isalpha(ch)) {
+            postfix += ch;
+        }
+        else if (ch == '(') {
+            st.push(ch);
+        }
+        else if (ch == ')') {
+            while (!st.empty() && st.top() != '(') {
+                postfix += st.top();
+                st.pop();
+            }
+            if (!st.empty()) st.pop(); // remove '('
+        }
+        else { 
+            while (!st.empty() && precedence(st.top()) >= precedence(ch)) {
+                postfix += st.top();
+                st.pop();
+            }
+            st.push(ch);
+        }
+    }
+
+    while (!st.empty()) {
+        postfix += st.top();
+        st.pop();
+    }
+
+    return postfix;
+}
+
+
+int evaluatePostfix(string postfix, map<char, int>& values) {
+    stack<int> st;
+
+    for (char ch : postfix) {
+        if (isalpha(ch)) {
+            // Push value of variable
+            st.push(values[ch]);
+        }
+        else {
+            int val2 = st.top(); st.pop();
+            int val1 = st.top(); st.pop();
+
+            switch (ch) {
+                case '+': st.push(val1 + val2); break;
+                case '-': st.push(val1 - val2); break;
+                case '*': st.push(val1 * val2); break;
+                case '/': st.push(val1 / val2); break;
+                case '%': st.push(val1 % val2); break;
+                case '^': st.push(pow(val1, val2)); break;
+            }
+        }
+    }
+    return st.top();
+}
+
+int main() {
+    string infix;
+    cout << "Enter Infix expression (use variables like a, b, c): ";
+    getline(cin, infix);
+
+    string postfix = infixToPostfix(infix);
+    cout << "Postfix expression: " << postfix << endl;
+
+    map<char, int> values;
+    for (char ch : postfix) {
+        if (isalpha(ch) && values.find(ch) == values.end()) {
+            cout << "Enter value for " << ch << ": ";
+            int val;
+            cin >> val;
+            values[ch] = val;
+        }
+    }
+
+    int result = evaluatePostfix(postfix, values);
+    cout << "Evaluation result: " << result << endl;
+
+    return 0;
+}
